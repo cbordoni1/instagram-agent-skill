@@ -36,14 +36,14 @@ import re
 import statistics
 import sys
 
-WORD_RE = re.compile(r"[A-Za-z0-9$%'’-]+")
+WORD_RE = re.compile(r"[A-Za-z0-9À-ɏñÑ$%'’-]+")
 NUMBER_RE = re.compile(
     r"\$\s?\d[\d,]*(?:\.\d+)?"                       # money, whole
     r"|\b\d[\d,]*(?:\.\d+)?\s?"                      # a figure, with or
     r"(?:%|k\b|x\b|hrs?\b|hours?\b|mins?\b|minutes?\b"  # without a unit
-    r"|days?\b|weeks?\b|months?\b|years?\b)?",
+    r"|days?\b|weeks?\b|months?\b|years?\b|días?\b|dias?\b|semanas?\b|mes\b|meses\b|años?\b|anos?\b|horas?\b|hs\b|minutos?\b|kilos?\b|kg\b|gramos?\b)?",
     re.IGNORECASE)
-PROPER_RE = re.compile(r"(?<!^)\b[A-Z][a-z]{2,}\b")
+PROPER_RE = re.compile(r"(?<!^)\b[A-ZÁÉÍÓÚÑ][a-záéíóúñü]{2,}\b")
 HASHTAG_RE = re.compile(r"(?:^|\s)#\w+")
 EMOJI_RE = re.compile(r"[\U0001F300-\U0001FAFF☀-➿]")
 
@@ -106,6 +106,98 @@ DEALBREAKERS = [
      "Hashtag in the hook. Hashtags belong at the bottom of the caption, if anywhere."),
     (EMOJI_RE,
      "Emoji in the hook. On-screen text at hook size has room for words or for an emoji, not both."),
+]
+
+# ---------------------------------------------------------------------------
+# Rioplatense Spanish.
+#
+# The five checks above were written against English word lists, so a hook
+# written in Spanish scored WEAK however good it was: "cinco veces" was not a
+# number and "pará" was not tension. These sets extend the English ones rather
+# than replacing them, so both languages score and neither regresses.
+#
+# Voseo throughout, because that is how the hook gets said out loud here.
+# Accents are kept meaningful: "pará" (stop) is tension, "para" (for) is a
+# preposition, and collapsing the two would put a tension marker in every line.
+# ---------------------------------------------------------------------------
+
+SPOKEN_NUMBERS_ES = {
+    "cero", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho",
+    "nueve", "diez", "once", "doce", "quince", "veinte", "treinta",
+    "cuarenta", "cincuenta", "sesenta", "setenta", "ochenta", "noventa",
+    "cien", "ciento", "mil", "millón", "millon", "millones", "docena",
+    "decena", "media", "mitad", "doble", "triple",
+}
+
+MONEY_WORDS_ES = {
+    "pesos", "peso", "dólares", "dolares", "dólar", "dolar", "mangos",
+    "guita", "luca", "lucas", "palo", "palos", "centavos", "plata",
+    "porciento", "ganancia", "facturación", "sueldo", "alquiler",
+    "descuento", "precio", "presupuesto",
+}
+
+STAKES_ES = {
+    # frenar, negar
+    "pará", "pare", "frena", "frená", "nunca", "jamás", "jamas", "nadie",
+    "ninguno", "ninguna", "ni", "tampoco", "sin", "nada",
+    # error y pérdida
+    "mal", "error", "errores", "equivocado", "equivocada", "equivocas",
+    "perdí", "perder", "perdiendo", "perdés", "perdiste", "pérdida",
+    "cuesta", "costó", "costo", "roto", "rota", "arruina", "arruinás",
+    "arruinar", "fracasó", "fracaso", "falla", "fallé", "daña", "dañar",
+    "lastima", "enferma", "tóxico", "toxico", "venenoso",
+    # plata y trueque
+    "gratis", "pagué", "pagar", "pagás", "cobré", "ahorré", "ahorrás",
+    "ahorrar", "regalado", "carito", "caro", "barato",
+    # revelación
+    "verdad", "mito", "mentira", "mentí", "mienten", "secreto", "escondido",
+    "oculto", "prohibido", "ilegal", "estafa", "trampa",
+    # juicio
+    "peor", "odio", "odiás", "desperdicio", "desperdiciás",
+    # giro
+    "antes", "hasta", "salvo", "pero", "excepto", "igual", "encima",
+    "realmente", "todavía", "todavia", "ya", "recién", "recien",
+    "problema", "riesgo", "peligro", "cuidado", "ojo", "advertencia",
+    "arrepentí", "deberías", "deberia", "debería", "contra", "versus",
+    "dejá", "dejar", "borrá", "borrar", "cortá", "primero",
+}
+
+WEAK_OPENERS_ES = [
+    "bueno", "ok", "okey", "oka", "hola", "holis", "buenas", "che",
+    "chicos", "chicas", "gente", "amigos", "bienvenidos", "bienvenidas",
+    "hoy", "básicamente", "basicamente", "sinceramente", "la verdad",
+    "mirá que", "escuchen", "escuchá que", "o sea", "digamos", "nada",
+    "quería", "quiero", "les quiero", "les voy", "te voy", "uno de",
+    "una de", "en este", "en el", "esto es", "acá les", "acá te",
+    "esta es", "este es", "resulta que", "les cuento", "te cuento",
+]
+
+IMPERATIVES_ES = {
+    "pará", "mirá", "mira", "escuchá", "probá", "guardá", "usá",
+    "hacé", "armá", "escribí", "mandá", "llevá", "empezá", "dejá",
+    "fijate", "acordate", "anotá", "copiá", "robá", "borrá", "comprá",
+    "vení", "dale", "pedí", "elegí", "leé", "contá", "sumá", "revisá",
+    "ojo", "nunca", "siempre", "no", "andá", "sacá", "poné", "tené",
+}
+
+SPOKEN_NUMBERS |= SPOKEN_NUMBERS_ES
+MONEY_WORDS |= MONEY_WORDS_ES
+STAKES |= STAKES_ES
+IMPERATIVES |= IMPERATIVES_ES
+WEAK_OPENERS = WEAK_OPENERS + WEAK_OPENERS_ES
+
+DEALBREAKERS += [
+    (re.compile(r"(?i)^\s*[¿¡]?\s*(?:no pares de scrollear|pará de scrollear"
+                r"|no sigas scrolleando|freu?ná el scroll)"),
+     "Abre pidiendo atención. Si la tuvieras no haría falta pedirla."),
+    (re.compile(r"(?i)\b(?:en este (?:video|reel)|en el video de hoy"
+                r"|te voy a (?:mostrar|contar|enseñar)"
+                r"|les voy a (?:mostrar|contar|enseñar)"
+                r"|hoy les traigo|hoy te traigo)\b"),
+     "Preámbulo de video. Borralo y abrí directo en lo que promete."),
+    (re.compile(r"(?i)^\s*[¿¡]?\s*(?:hola|holis|buenas|qué onda|que onda|che\b"
+                r"|bienvenid[oa]s)"),
+     "Saludo. Nadie entra al feed para que lo saluden."),
 ]
 
 
@@ -203,10 +295,17 @@ def check_address(text):
     w = [x.lower().strip("'’") for x in words(text)]
     if re.search(r"\b(you|your|you're|youre|yourself)\b", low):
         return 100.0, "speaks to the viewer"
+    # Castellano: vos, tu/tus, te, y las formas verbales del voseo.
+    if re.search(r"\b(vos|tu|tus|tuyo|tuya|te|ti|usted|ustedes|los tuyos"
+                 r"|ten\u00e9s|quer\u00e9s|pod\u00e9s|sab\u00e9s|hac\u00e9s|sos|viste|dec\u00eds"
+                 r"|compr\u00e1s|pag\u00e1s|perd\u00e9s|le d(?:as|\u00e1s))\b", low):
+        return 100.0, "le habla al que mira"
     if w and w[0] in IMPERATIVES:
         return 90.0, f"imperative opener (\"{w[0]}\")"
     if re.search(r"\b(i|my|me|we|our)\b", low):
         return 70.0, "first person, no viewer named"
+    if re.search(r"\b(yo|mi|mis|me|nosotros|nuestro|nuestra|ac\u00e1 en|en el local)\b", low):
+        return 70.0, "primera persona, no nombra a quien mira"
     return 35.0, "third person, nobody in the room"
 
 

@@ -26,15 +26,33 @@ import json
 import re
 import sys
 
-WORD_RE = re.compile(r"[A-Za-z0-9$%'’-]+")
+WORD_RE = re.compile(r"[A-Za-z0-9À-ɏñÑ$%'’-]+")
 SENT_RE = re.compile(r"[^.!?]+[.!?]*")
-CONCRETE_RE = re.compile(r"\$\s?\d|\b\d[\d,.]*\b|(?<!^)\b[A-Z][a-z]{2,}\b", re.MULTILINE)
+CONCRETE_RE = re.compile(
+    r"\$\s?\d|\b\d[\d,.]*\b"
+    # Nombre propio: sensible a mayúsculas a propósito. Con IGNORECASE
+    # global, [A-Z] matchea cualquier letra y todo el texto parece concreto.
+    r"|(?<!^)\b[A-ZÁÉÍÓÚÑ][a-záéíóúñü]{2,}\b"
+    # Numbers said in Spanish: scoped here, so the case-insensitive flag
+    # cannot leak onto the proper-noun branch above.
+    r"|(?i:\b(?:dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|"
+    r"quince|veinte|treinta|cuarenta|cincuenta|cien|mil|millón|millones|"
+    r"docena|mitad|doble|triple|pesos|dólares|kilos?|gramos?)\b)",
+    re.MULTILINE)
 STOPWORDS = {
     "the", "a", "an", "and", "or", "but", "if", "of", "to", "in", "on", "for",
     "with", "that", "this", "it", "is", "are", "was", "were", "be", "been",
     "you", "your", "i", "my", "me", "we", "our", "they", "them", "he", "she",
     "so", "just", "not", "no", "do", "did", "does", "have", "has", "had",
     "will", "can", "at", "as", "by", "from", "out", "up", "off", "one", "all",
+    # Spanish
+    "el", "la", "los", "las", "un", "una", "unos", "unas", "lo", "al", "del",
+    "de", "que", "y", "o", "pero", "si", "en", "con", "por", "para", "sin",
+    "es", "son", "era", "ser", "está", "están", "hay", "tiene", "tienen",
+    "se", "su", "sus", "mi", "mis", "tu", "tus", "vos", "te", "me", "nos",
+    "yo", "él", "ella", "ellos", "ellas", "esto", "esta", "este", "eso",
+    "esa", "ese", "no", "ni", "más", "muy", "ya", "así", "acá", "ahí",
+    "cuando", "como", "porque", "todo", "toda", "todos", "todas",
 }
 
 HOOK_WINDOW = 3.0        # seconds. Past this, the thumb has already decided.
